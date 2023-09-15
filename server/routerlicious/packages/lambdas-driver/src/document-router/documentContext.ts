@@ -22,6 +22,7 @@ export class DocumentContext extends EventEmitter implements IContext {
 
 	private closed = false;
 	private contextError = undefined;
+	private finalGlobalCheckpointError: boolean = false;
 
 	constructor(
 		private readonly routingKey: IRoutingKey,
@@ -92,6 +93,7 @@ export class DocumentContext extends EventEmitter implements IContext {
 
 	public error(error: any, errorData: IContextErrorData) {
 		this.contextError = error;
+		this.finalGlobalCheckpointError = errorData.finalGlobalCheckpointError ?? false;
 		this.emit("error", error, errorData);
 	}
 
@@ -103,5 +105,13 @@ export class DocumentContext extends EventEmitter implements IContext {
 
 	public getContextError() {
 		return this.contextError;
+	}
+
+	public getCheckpointError() {
+		return this.finalGlobalCheckpointError;
+	}
+
+	public setCheckpointError(isError: boolean): void {
+		this.finalGlobalCheckpointError = isError;
 	}
 }

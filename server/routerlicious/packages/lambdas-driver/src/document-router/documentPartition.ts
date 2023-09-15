@@ -144,6 +144,14 @@ export class DocumentPartition {
 		);
 	}
 
+	public isInactiveWithCheckpointError(now: number = Date.now()) {
+		return (
+			this.context.getCheckpointError() &&
+			this.activityTimeoutTime &&
+			now > this.activityTimeoutTime
+		);
+	}
+
 	/**
 	 * Marks this document partition as corrupt
 	 * Future messages will be checkpointed but no real processing will happen

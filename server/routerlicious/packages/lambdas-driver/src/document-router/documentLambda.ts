@@ -195,10 +195,20 @@ export class DocumentLambda implements IPartitionLambda {
 		for (const [routingKey, documentPartition] of documentPartitions) {
 			if (documentPartition.isInactive(now)) {
 				// Close and remove the inactive document
-				this.contextManager.removeContext(documentPartition.context);
-				documentPartition.close(LambdaCloseType.ActivityTimeout);
-				this.documents.delete(routingKey);
+				this.closeDocument(documentPartition, routingKey, LambdaCloseType.ActivityTimeout);
+			} else if (documentPartition.isInactiveWithCheckpointError(now)) {
+				this.closeDocument(documentPartition, routingKey, LambdaCloseType.CheckpointError);
 			}
 		}
+	}
+
+	private closeDocument(
+		documentPartition: DocumentPartition,
+		routingKey: string,
+		closeType: LambdaCloseType,
+	) {
+		this.contextManager.removeContext(documentPartition.context);
+		documentPartition.close(closeType);
+		this.documents.delete(routingKey);
 	}
 }

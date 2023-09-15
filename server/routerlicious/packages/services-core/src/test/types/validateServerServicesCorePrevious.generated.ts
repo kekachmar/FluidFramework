@@ -2660,6 +2660,7 @@ declare function get_current_EnumDeclaration_LambdaCloseType():
 declare function use_old_EnumDeclaration_LambdaCloseType(
     use: TypeOnly<old.LambdaCloseType>);
 use_old_EnumDeclaration_LambdaCloseType(
+    // @ts-expect-error compatibility expected to be broken
     get_current_EnumDeclaration_LambdaCloseType());
 
 /*

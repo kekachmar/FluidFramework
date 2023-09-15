@@ -102,6 +102,9 @@
 			},
 			"ClassDeclaration_MongoDocumentRepository": {
 				"forwardCompat": false
+			},
+			"EnumDeclaration_LambdaCloseType": {
+				"backCompat": false
 			}
 		}
 	}

@@ -23,6 +23,7 @@ declare function get_old_ClassDeclaration_DocumentContext():
 declare function use_current_ClassDeclaration_DocumentContext(
     use: TypeOnly<current.DocumentContext>);
 use_current_ClassDeclaration_DocumentContext(
+    // @ts-expect-error compatibility expected to be broken
     get_old_ClassDeclaration_DocumentContext());
 
 /*

@@ -3,6 +3,7 @@
  * Licensed under the MIT License.
  */
 
+import { DocumentContext } from "@fluidframework/server-lambdas-driver";
 import { ICheckpointService, IContext, IDeliState } from "@fluidframework/server-services-core";
 import { getLumberBaseProperties, Lumberjack } from "@fluidframework/server-services-telemetry";
 import { CheckpointReason } from "../utils";
@@ -64,10 +65,12 @@ export class CheckpointContext {
 			);
 			Lumberjack.error(`Error writing checkpoint to the database`, lumberjackProperties, ex);
 			databaseCheckpointFailed = true;
+			if (this.checkpointService.localCheckpointEnabled && globalCheckpointOnly) {
+				(this.context as DocumentContext).setCheckpointError(true);
+			}
 		}
 
 		if (!databaseCheckpointFailed) {
-			// Kafka checkpoint
 			try {
 				// depending on the sequence of events, it might try to checkpoint the same offset a second time
 				// detect and prevent that case here
@@ -79,6 +82,9 @@ export class CheckpointContext {
 				) {
 					this.lastKafkaCheckpointOffset = kafkaCheckpointMessage.offset;
 					this.context.checkpoint(kafkaCheckpointMessage, restartOnCheckpointFailure);
+				}
+				if (this.checkpointService.localCheckpointEnabled && !databaseCheckpointFailed) {
+					(this.context as DocumentContext).setCheckpointError(false);
 				}
 			} catch (ex) {
 				// TODO flag context as error / use this.context.error() instead?

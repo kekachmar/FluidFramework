@@ -25,6 +25,7 @@ export enum LambdaCloseType {
 	ActivityTimeout = "ActivityTimeout",
 	Rebalance = "Rebalance",
 	Error = "Error",
+	CheckpointError = "CheckpointError",
 }
 
 export enum LambdaName {
@@ -49,6 +50,11 @@ export interface IContextErrorData {
 	 * It should be set to the message that caused the corruption.
 	 */
 	markAsCorrupt?: IQueuedMessage;
+
+	/**
+	 * Indicates if there was a checkpoint error on the final global checkpoint.
+	 */
+	finalGlobalCheckpointError?: boolean;
 
 	tenantId?: string;
 	documentId?: string;

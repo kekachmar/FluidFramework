@@ -225,7 +225,8 @@ export class DeliLambdaFactory
 			const handler = async () => {
 				if (
 					closeType === LambdaCloseType.ActivityTimeout ||
-					closeType === LambdaCloseType.Error
+					closeType === LambdaCloseType.Error ||
+					closeType === LambdaCloseType.CheckpointError
 				) {
 					if (document?.isEphemeralContainer) {
 						// Call to historian to delete summaries
@@ -260,13 +261,14 @@ export class DeliLambdaFactory
 						return;
 					}
 					const filter = { documentId, tenantId, session: { $exists: true } };
+					const sessionActivity = closeType === LambdaCloseType.CheckpointError ?? false;
 					const data = {
 						"session.isSessionAlive": false,
-						"session.isSessionActive": false,
+						"session.isSessionActive": sessionActivity,
 						"lastAccessTime": Date.now(),
 					};
 					await this.documentRepository.updateOne(filter, data, undefined);
-					const message = `Marked session alive and active as false for closeType:
+					const message = `Marked session alive and active as ${sessionActivity} for closeType:
                         ${JSON.stringify(closeType)}`;
 
 					context.log?.info(message, { messageMetaData });
