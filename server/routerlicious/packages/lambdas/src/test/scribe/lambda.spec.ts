@@ -144,6 +144,7 @@ describe("Routerlicious", () => {
 					true,
 					true,
 					2000,
+					false,
 				);
 
 				testContext = new TestContext();

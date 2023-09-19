@@ -112,6 +112,7 @@ export class ScribeLambda implements IPartitionLambda {
 		private readonly disableTransientTenantFiltering: boolean,
 		private readonly restartOnCheckpointFailure: boolean,
 		private readonly kafkaCheckpointOnReprocessingOp: boolean,
+		private readonly localCheckpointEnabled,
 	) {
 		this.lastOffset = scribe.logOffset;
 		this.setStateFromCheckpoint(scribe);
@@ -616,11 +617,21 @@ export class ScribeLambda implements IPartitionLambda {
 				this.pendingP = undefined;
 				if (!skipKafkaCheckpoint && !databaseCheckpointFailed) {
 					this.context.checkpoint(queuedMessage, this.restartOnCheckpointFailure);
+					if (this.localCheckpointEnabled) {
+						const documentContext = this.context as DocumentContext;
+						if (documentContext.getCheckpointError()) {
+							(this.context as DocumentContext).setCheckpointError(false);
+						}
+					}
 				} else if (databaseCheckpointFailed) {
 					Lumberjack.info(
 						`Skipping kafka checkpoint due to database checkpoint failure.`,
 						getLumberBaseProperties(this.documentId, this.tenantId),
 					);
+
+					if (this.localCheckpointEnabled && this.globalCheckpointOnly) {
+						(this.context as DocumentContext).setCheckpointError(true);
+					}
 					databaseCheckpointFailed = false;
 				}
 				const pendingScribe = this.pendingCheckpointScribe;

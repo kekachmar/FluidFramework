@@ -169,6 +169,7 @@ export async function scribeCreate(
 		restartOnCheckpointFailure,
 		kafkaCheckpointOnReprocessingOp,
 		maxLogtailLength,
+		localCheckpointEnabled,
 	);
 }
 

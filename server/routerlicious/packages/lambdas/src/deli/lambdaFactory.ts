@@ -268,7 +268,7 @@ export class DeliLambdaFactory
 						"lastAccessTime": Date.now(),
 					};
 					await this.documentRepository.updateOne(filter, data, undefined);
-					const message = `Marked session alive and active as ${sessionActivity} for closeType:
+					const message = `Marked session alive as false and active as ${sessionActivity} for closeType:
                         ${JSON.stringify(closeType)}`;
 
 					context.log?.info(message, { messageMetaData });

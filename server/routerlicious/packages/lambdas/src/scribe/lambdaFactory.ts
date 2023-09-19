@@ -85,6 +85,7 @@ export class ScribeLambdaFactory
 		private readonly restartOnCheckpointFailure: boolean,
 		private readonly kafkaCheckpointOnReprocessingOp: boolean,
 		private readonly maxLogtailLength: number,
+		private readonly localCheckpointEnabled: boolean,
 	) {
 		super();
 	}
@@ -315,6 +316,7 @@ export class ScribeLambdaFactory
 			this.disableTransientTenantFiltering,
 			this.restartOnCheckpointFailure,
 			this.kafkaCheckpointOnReprocessingOp,
+			this.localCheckpointEnabled,
 		);
 
 		await this.sendLambdaStartResult(tenantId, documentId, {

@@ -69,7 +69,10 @@ export const logCommonSessionEndMetrics = (
 	) {
 		sessionMetric.setProperties({ [CommonProperties.sessionState]: SessionState.paused });
 		sessionMetric.success("Session paused");
-	} else if (closeType === LambdaCloseType.ActivityTimeout) {
+	} else if (
+		closeType === LambdaCloseType.ActivityTimeout ||
+		closeType === LambdaCloseType.CheckpointError
+	) {
 		if (activeNackMessageTypes?.includes(NackMessagesType.SummaryMaxOps)) {
 			sessionMetric.error(
 				"Session terminated due to inactivity while exceeding max ops since last summary",
