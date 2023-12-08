@@ -365,6 +365,7 @@ export class DeliLambda extends TypedEventEmitter<IDeliLambdaEvents> implements 
 
 		this.localCheckpointEnabled = this.checkpointService?.getLocalCheckpointEnabled() ?? false;
 
+		// Flag to route all checkpoints to global collection if there are no active clients, is reset when clients join
 		this.globalCheckpointOnly = this.localCheckpointEnabled ? false : true;
 
 		// start the activity idle timer when created
