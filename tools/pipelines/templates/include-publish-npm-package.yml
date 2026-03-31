@@ -22,7 +22,7 @@ parameters:
   type: string
   default: repo
 
-- name: serverManifestPathSegment
+- name: serverManifestCategory
   type: string
   default: prerelease
   values:
@@ -135,8 +135,8 @@ stages:
       - template: /tools/pipelines/templates/upload-server-manifest.yml@self
         parameters:
           buildDirectory: '${{ parameters.buildDirectory }}'
-          blobPathPrefix: ${{ format('server/{0}', parameters.serverManifestPathSegment) }}
-          serverManifestPathSegment: ${{ parameters.serverManifestPathSegment }}
+          blobPathPrefix: ${{ format('server/{0}', parameters.serverManifestCategory) }}
+          serverManifestCategory: ${{ parameters.serverManifestCategory }}
           ${{ if eq(parameters.tagName, 'server') }}:
             releaseGroup: 'server'
             releaseReportCategory: 'routerlicious-'

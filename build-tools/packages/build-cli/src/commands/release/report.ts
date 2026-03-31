@@ -327,10 +327,21 @@ export abstract class ReleaseReportBaseCommand<
 			(v) =>
 				v.version === latestReleasedVersion?.version && v.date === latestReleasedVersion?.date,
 		);
-		const previousReleasedVersion =
-			vIndex + 1 <= versionCount
-				? sortedByVersion[vIndex + 1]
-				: { version: DEFAULT_MIN_VERSION };
+		let previousReleasedVersion: VersionDetails | undefined;
+		if (vIndex >= 0) {
+			previousReleasedVersion =
+				vIndex + 1 <= versionCount
+					? sortedByVersion[vIndex + 1]
+					: { version: DEFAULT_MIN_VERSION };
+		} else {
+			if (latestReleaseChooseMode === "inRepo" && useCurrentVersion) {
+				// When --useCurrentVersion selects an unreleased in-repo version, there is no matching tag/date entry.
+				// In that case, use the greatest version number as the previous released version.
+				previousReleasedVersion = sortedByVersion[0] ?? { version: DEFAULT_MIN_VERSION };
+			} else {
+				previousReleasedVersion = { version: DEFAULT_MIN_VERSION };
+			}
+		}
 
 		return {
 			repoVersion: {
@@ -352,7 +363,9 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 
     The command operates in two modes: "whole repo" or "release group." The default mode is "whole repo." In this mode, the command will look at the git tags in the repo to determine the versions, and will include all release groups and packages in the repo. You can control which version of each package and release group is included in the report using the --interactive, --mostRecent, and --highest flags.
 
-    The "release group" mode can be activated by passing a --releaseGroup flag. In this mode, the specified release group's version will be loaded from the repo, and its immediate Fluid dependencies will be included in the report. This is useful when we want to include only the dependency versions that the release group depends on in the report.`;
+	    The "release group" mode can be activated by passing a --releaseGroup flag. In this mode, the specified release group's version will be loaded from the repo, and its immediate Fluid dependencies will be included in the report. This is useful when we want to include only the dependency versions that the release group depends on in the report.
+
+	    If you want to include only packages in the selected release group, use --releaseGroupOnly.`;
 
 	static readonly examples = [
 		{
@@ -368,6 +381,11 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 			description:
 				"Generate a release report for each package and release group in the repo interactively.",
 			command: "<%= config.bin %> <%= command.id %> -i",
+		},
+		{
+			description:
+				"Generate a release report for only the packages in the historian release group at the in-repo version.",
+			command: "<%= config.bin %> <%= command.id %> -g historian --releaseGroupOnly",
 		},
 	];
 
@@ -397,6 +415,12 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 
             If you want to report on a particular release, check out the git tag for the release version you want to report on before running this command.`,
 			required: false,
+		}),
+		releaseGroupOnly: Flags.boolean({
+			description:
+				"When used with --releaseGroup in in-repo mode, only include packages in that release group and do not include direct Fluid dependencies.",
+			required: false,
+			default: false,
 		}),
 		output: Flags.directory({
 			char: "o",
@@ -439,6 +463,10 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 			this.error(`--useCurrentVersion can only be used in in-repo mode.`);
 		}
 
+		if (flags.releaseGroupOnly && flags.releaseGroup === undefined) {
+			this.error(`--releaseGroupOnly can only be used when --releaseGroup is provided.`);
+		}
+
 		this.releaseGroupName = flags.releaseGroup;
 		const context = await this.getContext();
 
@@ -447,7 +475,7 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 			context,
 			mode,
 			this.releaseGroupName,
-			/* includeDeps */ mode === "inRepo",
+			/* includeDeps */ mode === "inRepo" && !flags.releaseGroupOnly,
 			flags.useCurrentVersion,
 		);
 
@@ -465,13 +493,26 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		this.logHr();
 		this.log();
 		this.log(chalk.underline(chalk.bold(`Release Report`)));
-		if (mode === "inRepo" && flags.releaseGroup !== undefined) {
+		if (mode === "inRepo" && flags.releaseGroup !== undefined && !flags.releaseGroupOnly) {
 			this.log(
 				`${chalk.yellow(chalk.bold("\nIMPORTANT"))}: This report only includes the ${chalk.blue(
 					flags.releaseGroup,
 				)} release group (version ${chalk.blue(
 					context.getVersion(flags.releaseGroup),
 				)}) and its ${chalk.bold("direct Fluid dependencies")}.`,
+			);
+			this.log(
+				`${chalk.yellow(
+					chalk.bold("IMPORTANT"),
+				)}: The release version was determined by the in-repo version of the release group.`,
+			);
+		} else if (mode === "inRepo" && flags.releaseGroup !== undefined && flags.releaseGroupOnly) {
+			this.log(
+				`${chalk.yellow(chalk.bold("\nIMPORTANT"))}: This report only includes the ${chalk.blue(
+					flags.releaseGroup,
+				)} release group (version ${chalk.blue(
+					context.getVersion(flags.releaseGroup),
+				)}) and ${chalk.bold("does not include direct Fluid dependencies")}.`,
 			);
 			this.log(
 				`${chalk.yellow(

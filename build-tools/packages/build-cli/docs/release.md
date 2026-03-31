@@ -210,7 +210,8 @@ Generates a report of Fluid Framework releases.
 ```
 USAGE
   $ flub release report [--json] [-v | --quiet] [-i | -r | -s] [-g
-    client|server|azure|build-tools|gitrest|historian] [-o <value>] [--baseFileName <value>]
+    client|server|azure|build-tools|gitrest|historian] [--releaseGroupOnly] [-o <value>] [--baseFileName <value>]
+    [--useCurrentVersion]
 
 FLAGS
   -g, --releaseGroup=<option>
@@ -241,6 +242,14 @@ FLAGS
       tilde, legacy-compat) and the .json extension. For example, if baseFileName is 'foo', the output files will be named
       'foo.caret.json', 'foo.simple.json', etc.
 
+  --releaseGroupOnly
+      When used with --releaseGroup in in-repo mode, only include packages in that release group and do not include direct
+      Fluid dependencies.
+
+  --useCurrentVersion
+      When selecting versions in in-repo mode, use current build versions (including unreleased in-repo versions) instead
+      of falling back to the latest released version.
+
 LOGGING FLAGS
   -v, --verbose  Enable verbose logging.
       --quiet    Disable all logging.
@@ -264,6 +273,8 @@ DESCRIPTION
   group's version will be loaded from the repo, and its immediate Fluid dependencies will be included in the report.
   This is useful when we want to include only the dependency versions that the release group depends on in the report.
 
+  If you want to include only packages in the selected release group, pass --releaseGroupOnly.
+
 EXAMPLES
   Generate a release report of the highest semver release for each package and release group and display it in the
   terminal only.
@@ -277,6 +288,10 @@ EXAMPLES
   Generate a release report for each package and release group in the repo interactively.
 
     $ flub release report -i
+
+  Generate a release report for only the packages in the historian release group at the in-repo version.
+
+    $ flub release report -g historian --releaseGroupOnly
 ```
 
 _See code: [src/commands/release/report.ts](https://github.com/microsoft/FluidFramework/blob/main/build-tools/packages/build-cli/src/commands/release/report.ts)_
