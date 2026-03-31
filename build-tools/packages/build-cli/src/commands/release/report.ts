@@ -10,6 +10,7 @@ import {
 	detectBumpType,
 	detectVersionScheme,
 	getPreviousVersions,
+	isPrereleaseVersion,
 	isVersionBumpType,
 	type ReleaseVersion,
 	type VersionBumpType,
@@ -335,9 +336,7 @@ export abstract class ReleaseReportBaseCommand<
 					: { version: DEFAULT_MIN_VERSION };
 		} else {
 			if (latestReleaseChooseMode === "inRepo" && useCurrentVersion) {
-				// When --useCurrentVersion selects an unreleased in-repo version, there is no matching tag/date entry.
-				// In that case, use the greatest version number as the previous released version.
-				previousReleasedVersion = sortedByVersion[0] ?? { version: DEFAULT_MIN_VERSION };
+				previousReleasedVersion = undefined;
 			} else {
 				previousReleasedVersion = { version: DEFAULT_MIN_VERSION };
 			}
@@ -626,23 +625,8 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		const report: ReleaseReport = {};
 
 		for (const [pkgName, verDetails] of Object.entries(reportData)) {
-			if (verDetails.previousReleasedVersion === undefined) {
-				this.warning(`No previous version for ${pkgName}.`);
-			}
-
 			const { version: latestVer, date: latestDate } = verDetails.latestReleasedVersion;
-			const { version: prevVer } = verDetails.previousReleasedVersion ?? {
-				version: DEFAULT_MIN_VERSION,
-			};
-
-			const bumpType = detectBumpType(prevVer, latestVer);
-			if (!isVersionBumpType(bumpType)) {
-				this.error(
-					`Invalid bump type (${bumpType}) detected in package ${pkgName}. ${prevVer} => ${latestVer}`,
-				);
-			}
-
-			const isNewRelease = this.isRecentReleaseByDate(latestDate);
+			const isPrerelease = isPrereleaseVersion(latestVer);
 			const scheme = detectVersionScheme(latestVer);
 
 			if (context.flubConfig.releaseReport === undefined) {
@@ -651,17 +635,60 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 
 			const ranges = getRanges(latestVer, context.flubConfig.releaseReport, pkgName);
 
+			if (isPrerelease) {
+				if (isReleaseGroup(pkgName)) {
+					for (const pkg of context.packagesInReleaseGroup(pkgName)) {
+						report[pkg.name] = {
+							version: latestVer,
+							versionScheme: scheme,
+							date: latestDate,
+							releaseGroup: pkg.monoRepo?.releaseGroup,
+							ranges,
+						};
+					}
+				} else {
+					report[pkgName] = {
+						version: latestVer,
+						versionScheme: scheme,
+						date: latestDate,
+						ranges,
+					};
+				}
+
+				continue;
+			}
+
+			if (verDetails.previousReleasedVersion === undefined) {
+				this.warning(`No previous version for ${pkgName}.`);
+			}
+
+			const prevVer = verDetails.previousReleasedVersion?.version;
+			const bumpType =
+				prevVer === undefined
+					? detectBumpType(DEFAULT_MIN_VERSION, latestVer)
+					: detectBumpType(prevVer, latestVer);
+
+			if (!isVersionBumpType(bumpType)) {
+				this.error(
+					`Invalid bump type (${bumpType}) detected in package ${pkgName}. ${
+						prevVer ?? "<none>"
+					} => ${latestVer}`,
+				);
+			}
+
+			const isNewRelease = this.isRecentReleaseByDate(latestDate);
+
 			// Expand the release group to its constituent packages.
 			if (isReleaseGroup(pkgName)) {
 				for (const pkg of context.packagesInReleaseGroup(pkgName)) {
 					report[pkg.name] = {
 						version: latestVer,
 						versionScheme: scheme,
-						previousVersion: prevVer === DEFAULT_MIN_VERSION ? undefined : prevVer,
 						date: latestDate,
-						releaseType: bumpType,
 						releaseGroup: pkg.monoRepo?.releaseGroup,
 						isNewRelease,
+						previousVersion: prevVer,
+						releaseType: bumpType,
 						ranges,
 					};
 				}
@@ -669,10 +696,10 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 				report[pkgName] = {
 					version: latestVer,
 					versionScheme: scheme,
-					previousVersion: prevVer === DEFAULT_MIN_VERSION ? undefined : prevVer,
 					date: latestDate,
-					releaseType: bumpType,
 					isNewRelease,
+					previousVersion: prevVer,
+					releaseType: bumpType,
 					ranges,
 				};
 			}
@@ -689,12 +716,8 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		const releaseGroups: ReleaseGroup[] = [];
 
 		for (const [pkgName, verDetails] of Object.entries(reportData)) {
-			const {
-				date: latestDate,
-				version: latestVer,
-				previousVersion: prevVer,
-				releaseGroup,
-			} = verDetails;
+			const { date: latestDate, version: latestVer, releaseGroup } = verDetails;
+			const prevVer = "previousVersion" in verDetails ? verDetails.previousVersion : undefined;
 
 			let displayName: string | undefined;
 			if (releaseGroup !== undefined) {
@@ -708,9 +731,8 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 			const highlight = this.isRecentReleaseByDate(latestDate) ? chalk.green : chalk.white;
 			const displayRelDate = highlight(getDisplayDateRelative(latestDate));
 
-			const displayPreviousVersion = prevVer ?? DEFAULT_MIN_VERSION;
-
-			const bumpType = detectBumpType(prevVer ?? DEFAULT_MIN_VERSION, latestVer);
+			const displayPreviousVersion = prevVer ?? "<none>";
+			const bumpType = "releaseType" in verDetails ? verDetails.releaseType : "prerelease";
 			const displayBumpType = highlight(`${bumpType}`);
 
 			const displayVersionSection = chalk.gray(
