@@ -630,7 +630,6 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 
 		for (const [pkgName, verDetails] of Object.entries(reportData)) {
 			const { version: latestVer, date: latestDate } = verDetails.latestReleasedVersion;
-			const isPrerelease = isPrereleaseVersion(latestVer);
 			const scheme = detectVersionScheme(latestVer);
 
 			if (context.flubConfig.releaseReport === undefined) {

@@ -42,7 +42,7 @@ jobs:
           script: |
             set -eu -o pipefail
             mkdir generate_release_reports
-            flub release report -g ${{ parameters.releaseGroup }} --releaseGroupOnly --useCurrentVersion -o generate_release_reports --baseFileName manifest
+            flub release report -g ${{ parameters.releaseGroup }} --useCurrentVersion -o generate_release_reports --baseFileName manifest
 
       - task: Bash@3
         displayName: Update prerelease report version
@@ -52,7 +52,7 @@ jobs:
           script: |
             set -eu -o pipefail
             mkdir upload_release_reports
-            flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)'
+            flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)' --releaseGroup ${{ parameters.releaseGroup }}
 
     - ${{ if eq(parameters.serverManifestCategory, 'release') }}:
       - task: Bash@3

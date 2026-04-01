@@ -10,8 +10,9 @@ import type { Logger } from "@fluidframework/build-tools";
 import { Flags } from "@oclif/core";
 import { formatISO } from "date-fns";
 
-import { semverFlag } from "../../flags.js";
+import { releaseGroupFlag, semverFlag } from "../../flags.js";
 import { BaseCommand, type ReleaseReport, toReportKind } from "../../library/index.js";
+import type { ReleaseGroup } from "../../releaseGroups.js";
 
 export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReportCommand> {
 	static readonly summary =
@@ -40,6 +41,11 @@ export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReport
 				"Branch name. For release branches, the manifest file is uplaoded by build number and not by current date.",
 			required: true,
 		}),
+		releaseGroup: releaseGroupFlag({
+			description:
+				"If provided, output manifests are filtered to only packages that belong to this release group.",
+			required: false,
+		}),
 		...BaseCommand.flags,
 	};
 
@@ -57,6 +63,7 @@ export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReport
 				flags.version.version,
 				flags.outDir,
 				flags.branchName,
+				flags.releaseGroup,
 				this.logger,
 			);
 		} catch (error: unknown) {
@@ -78,14 +85,31 @@ async function generateReleaseReport(
 	version: string,
 	outDir: string,
 	branchName: string,
+	releaseGroup: ReleaseGroup | undefined,
 	log: Logger,
 ): Promise<void> {
 	const ignorePackageList = new Set(["@types/jest-environment-puppeteer"]);
 
 	await updateReportVersions(fullReleaseReport, ignorePackageList, version, log);
+	const packageNamesToInclude =
+		releaseGroup === undefined
+			? undefined
+			: getPackageNamesForReleaseGroup(fullReleaseReport, releaseGroup);
 
-	const caretReportOutput = toReportKind(fullReleaseReport, "caret");
-	const simpleReportOutput = toReportKind(fullReleaseReport, "simple");
+	const caretReportOutput =
+		packageNamesToInclude === undefined
+			? toReportKind(fullReleaseReport, "caret")
+			: filterReportByPackageNames(
+					toReportKind(fullReleaseReport, "caret") as ReleaseReport,
+					packageNamesToInclude,
+				);
+	const simpleReportOutput =
+		packageNamesToInclude === undefined
+			? toReportKind(fullReleaseReport, "simple")
+			: filterReportByPackageNames(
+					toReportKind(fullReleaseReport, "simple") as ReleaseReport,
+					packageNamesToInclude,
+				);
 
 	await Promise.all([
 		writeReport(
@@ -107,6 +131,29 @@ async function generateReleaseReport(
 	]);
 
 	log.log("Release report processed successfully.");
+}
+
+function getPackageNamesForReleaseGroup(
+	report: ReleaseReport,
+	releaseGroup: ReleaseGroup,
+): Set<string> {
+	const packageNames = new Set(
+		Object.entries(report)
+			.filter(([, details]) => details?.releaseGroup === releaseGroup)
+			.map(([packageName]) => packageName),
+	);
+
+	if (packageNames.size === 0) {
+		throw new Error(`No packages found for release group '${releaseGroup}' in the full report.`);
+	}
+
+	return packageNames;
+}
+
+function filterReportByPackageNames(report: ReleaseReport, packageNames: Set<string>): ReleaseReport {
+	return Object.fromEntries(
+		Object.entries(report).filter(([packageName]) => packageNames.has(packageName)),
+	) as ReleaseReport;
 }
 
 /**
