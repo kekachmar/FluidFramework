@@ -481,7 +481,8 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		if (this.releaseData === undefined) {
 			this.error(`No releases found for ${flags.releaseGroup}`);
 		}
-		const report = await this.generateReleaseReport(this.releaseData);
+		const shouldIncludeReleaseType = mode === "inRepo" && flags.useCurrentVersion;
+		const report = await this.generateReleaseReport(this.releaseData, shouldIncludeReleaseType);
 
 		const tableData = this.generateReleaseTable(report, flags.releaseGroup);
 
@@ -620,7 +621,10 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		}
 	}
 
-	private async generateReleaseReport(reportData: PackageReleaseData): Promise<ReleaseReport> {
+	private async generateReleaseReport(
+		reportData: PackageReleaseData,
+		isPrereleaseReport: boolean,
+	): Promise<ReleaseReport> {
 		const context = await this.getContext();
 		const report: ReleaseReport = {};
 
@@ -635,7 +639,7 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 
 			const ranges = getRanges(latestVer, context.flubConfig.releaseReport, pkgName);
 
-			if (isPrerelease) {
+			if (isPrereleaseReport) {
 				if (isReleaseGroup(pkgName)) {
 					for (const pkg of context.packagesInReleaseGroup(pkgName)) {
 						report[pkg.name] = {
