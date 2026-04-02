@@ -83,9 +83,15 @@ jobs:
           workingDirectory: ${{ parameters.buildDirectory }}
           script: |
             set -eu -o pipefail
+            buildNumber="$(Build.BuildNumber)"
             for file in upload_release_reports/*.json; do
                 if [ -f "$file" ]; then
-                    mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$(basename "$file" .json)-$(Build.BuildNumber).json"
+                baseName="$(basename "$file" .json)"
+                if [[ "$baseName" == *"-$buildNumber" ]]; then
+                  mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName.json"
+                else
+                  mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName-$buildNumber.json"
+                fi
                 fi
             done
 
