@@ -14,6 +14,12 @@ import { releaseGroupFlag, semverFlag } from "../../flags.js";
 import { BaseCommand, type ReleaseReport, toReportKind } from "../../library/index.js";
 import type { ReleaseGroup } from "../../releaseGroups.js";
 
+const releaseGroupsWithTestVersionsInManifest = new Set<ReleaseGroup>([
+	"server",
+	"historian",
+	"gitrest",
+]);
+
 export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReportCommand> {
 	static readonly summary =
 		`Creates a release report for an unreleased build (one that is not published to npm), using an existing report in the "full" format as input.`;
@@ -90,7 +96,7 @@ async function generateReleaseReport(
 ): Promise<void> {
 	const ignorePackageList = new Set(["@types/jest-environment-puppeteer"]);
 
-	await updateReportVersions(fullReleaseReport, ignorePackageList, version, log);
+	await updateReportVersions(fullReleaseReport, ignorePackageList, version, releaseGroup, log);
 	const packageNamesToInclude =
 		releaseGroup === undefined
 			? undefined
@@ -202,8 +208,17 @@ async function updateReportVersions(
 	report: ReleaseReport,
 	ignorePackageList: Set<string>,
 	version: string,
+	releaseGroup: ReleaseGroup | undefined,
 	log: Logger,
 ): Promise<void> {
+	const useTestVersionForReleaseGroupPackages =
+		releaseGroup !== undefined &&
+		releaseGroupsWithTestVersionsInManifest.has(releaseGroup) &&
+		isInternalTestVersion(version);
+
+	const packageNamesForReleaseGroup =
+		releaseGroup === undefined ? undefined : getPackageNamesForReleaseGroup(report, releaseGroup);
+
 	const clientPackageName = "fluid-framework";
 
 	const packageReleaseDetails = report[clientPackageName];
@@ -232,6 +247,12 @@ async function updateReportVersions(
 		}
 
 		const packageInfo = report[packageName];
+
+		if (useTestVersionForReleaseGroupPackages && packageNamesForReleaseGroup?.has(packageName)) {
+			report[packageName].ranges.caret = version;
+			report[packageName].version = version;
+			continue;
+		}
 
 		// todo: add better checks
 		if (packageInfo.ranges.caret && packageInfo.ranges.caret === clientVersionCaret) {
