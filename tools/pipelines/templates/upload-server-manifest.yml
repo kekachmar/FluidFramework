@@ -89,6 +89,8 @@ jobs:
                 baseName="$(basename "$file" .json)"
                 if [[ "$baseName" == *"-$buildNumber" ]]; then
                   mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName.json"
+                elif [[ "$baseName" =~ -[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+                  mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName.json"
                 else
                   mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName-$buildNumber.json"
                 fi
