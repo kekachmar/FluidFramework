@@ -44,7 +44,7 @@ export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReport
 		}),
 		branchName: Flags.string({
 			description:
-				"Branch name. For release branches, the manifest file is uplaoded by build number and not by current date.",
+				"Branch name. For release branches, the manifest file is uploaded by build number and not by current date.",
 			required: true,
 		}),
 		releaseGroup: releaseGroupFlag({
