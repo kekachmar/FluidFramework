@@ -381,7 +381,7 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		{
 			description:
 				"Generate a release report for the historian release group at the in-repo version.",
-			command: "<%= config.bin %> <%= command.id %> -g historian",
+			command: "<%= config.bin %> <%= command.id %> -g historian --useCurrentVersion",
 		},
 	];
 
