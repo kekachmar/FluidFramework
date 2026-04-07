@@ -21,8 +21,6 @@ jobs:
       value: $[stageDependencies.build.build.outputs['SetVersion.version']]
     - name: isReleaseBuild
       value: $[eq(variables['release'], 'release')]
-    - name: blobPathPrefix
-      value: $[if(eq(variables['release'], 'release'), 'server/release', 'server/prerelease')]
     steps:
     - template: /tools/pipelines/templates/include-use-node-version.yml@self
     - template: /tools/pipelines/templates/include-install-build-tools.yml@self
@@ -79,4 +77,3 @@ jobs:
     - template: /tools/pipelines/templates/include-upload-release-reports.yml@self
       parameters:
         buildDirectory: ${{ parameters.buildDirectory }}
-        blobPathPrefix: $(blobPathPrefix)
