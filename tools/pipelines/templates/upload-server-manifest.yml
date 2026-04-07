@@ -12,14 +12,6 @@ parameters:
   type: string
   default: ''
 
-- name: blobPathPrefix
-  type: string
-  default: ''
-
-- name: serverManifestCategory
-  type: string
-  default: prerelease
-
 jobs:
   - job:
     displayName: Upload Release Reports
@@ -27,53 +19,40 @@ jobs:
     - group: storage-vars
     - name: version
       value: $[stageDependencies.build.build.outputs['SetVersion.version']]
+    - name: isReleaseBuild
+      value: $[eq(variables['release'], 'release')]
+    - name: blobPathPrefix
+      value: $[if(eq(variables['release'], 'release'), 'server/release', 'server/prerelease')]
     steps:
     - template: /tools/pipelines/templates/include-use-node-version.yml@self
     - template: /tools/pipelines/templates/include-install-build-tools.yml@self
       parameters:
         buildDirectory: ${{ parameters.buildDirectory }}
 
-    - ${{ if eq(parameters.serverManifestCategory, 'prerelease') }}:
-      - task: Bash@3
-        displayName: Generate latest prerelease reports
-        inputs:
-          targetType: 'inline'
-          workingDirectory: ${{ parameters.buildDirectory }}
-          script: |
-            set -eu -o pipefail
-            mkdir generate_release_reports
+    - task: Bash@3
+      displayName: Generate release reports
+      inputs:
+        targetType: 'inline'
+        workingDirectory: ${{ parameters.buildDirectory }}
+        script: |
+          set -eu -o pipefail
+          mkdir generate_release_reports
+          # Use --useCurrentVersion for prerelease builds (non-release builds)
+          if [[ "$(isReleaseBuild)" != "True" ]]; then
             flub release report -g ${{ parameters.releaseGroup }} --useCurrentVersion -o generate_release_reports --baseFileName manifest
-
-      - task: Bash@3
-        displayName: Update prerelease report version
-        inputs:
-          targetType: 'inline'
-          workingDirectory: ${{ parameters.buildDirectory }}
-          script: |
-            set -eu -o pipefail
-            mkdir upload_release_reports
-            flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)' --releaseGroup ${{ parameters.releaseGroup }}
-
-    - ${{ if eq(parameters.serverManifestCategory, 'release') }}:
-      - task: Bash@3
-        displayName: Generate release reports
-        inputs:
-          targetType: 'inline'
-          workingDirectory: ${{ parameters.buildDirectory }}
-          script: |
-            set -eu -o pipefail
-            mkdir generate_release_reports
+          else
             flub release report -g ${{ parameters.releaseGroup }} -o generate_release_reports --baseFileName manifest
+          fi
 
-      - task: Bash@3
-        displayName: Update release report version
-        inputs:
-          targetType: 'inline'
-          workingDirectory: ${{ parameters.buildDirectory }}
-          script: |
-            set -eu -o pipefail
-            mkdir upload_release_reports
-            flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)' --releaseGroup ${{ parameters.releaseGroup }}
+    - task: Bash@3
+      displayName: Update report version
+      inputs:
+        targetType: 'inline'
+        workingDirectory: ${{ parameters.buildDirectory }}
+        script: |
+          set -eu -o pipefail
+          mkdir upload_release_reports
+          flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)' --releaseGroup ${{ parameters.releaseGroup }}
 
     - ${{ if ne(parameters.releaseReportCategory, '') }}:
       - task: Bash@3
@@ -100,4 +79,4 @@ jobs:
     - template: /tools/pipelines/templates/include-upload-release-reports.yml@self
       parameters:
         buildDirectory: ${{ parameters.buildDirectory }}
-        blobPathPrefix: ${{ parameters.blobPathPrefix }}
+        blobPathPrefix: $(blobPathPrefix)
