@@ -58,6 +58,14 @@ export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReport
 	public async run(): Promise<void> {
 		const { flags } = this;
 
+		let packageNamesForReleaseGroup: Set<string> | undefined;
+		if (flags.releaseGroup) {
+			const context = await this.getContext();
+			packageNamesForReleaseGroup = new Set(
+				context.packagesInReleaseGroup(flags.releaseGroup).map((pkg) => pkg.name),
+			);
+		}
+
 		const reportData = await fs.readFile(flags.fullReportFilePath, "utf8");
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -70,6 +78,7 @@ export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReport
 				flags.outDir,
 				flags.branchName,
 				flags.releaseGroup,
+				packageNamesForReleaseGroup,
 				this.logger,
 			);
 		} catch (error: unknown) {
@@ -84,6 +93,8 @@ export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReport
  * @param version - The version string for the reports.
  * @param outDir - The output directory for the reports.
  * @param branchName - The branch name for the reports.
+ * @param releaseGroup - The release group to filter packages by.
+ * @param packageNamesForReleaseGroup - The set of package names for the release group.
  * @param log - The logger object for logging messages.
  */
 async function generateReleaseReport(
@@ -92,29 +103,26 @@ async function generateReleaseReport(
 	outDir: string,
 	branchName: string,
 	releaseGroup: ReleaseGroup | undefined,
+	packageNamesForReleaseGroup: Set<string> | undefined,
 	log: Logger,
 ): Promise<void> {
 	const ignorePackageList = new Set(["@types/jest-environment-puppeteer"]);
 
-	await updateReportVersions(fullReleaseReport, ignorePackageList, version, releaseGroup, log);
-	const packageNamesToInclude =
-		releaseGroup === undefined
-			? undefined
-			: getPackageNamesForReleaseGroup(fullReleaseReport, releaseGroup);
+	await updateReportVersions(fullReleaseReport, ignorePackageList, version, releaseGroup, packageNamesForReleaseGroup, log);
 
 	const caretReportOutput =
-		packageNamesToInclude === undefined
+		packageNamesForReleaseGroup === undefined
 			? toReportKind(fullReleaseReport, "caret")
 			: filterReportByPackageNames(
 					toReportKind(fullReleaseReport, "caret") as ReleaseReport,
-					packageNamesToInclude,
+					packageNamesForReleaseGroup,
 				);
 	const simpleReportOutput =
-		packageNamesToInclude === undefined
+		packageNamesForReleaseGroup === undefined
 			? toReportKind(fullReleaseReport, "simple")
 			: filterReportByPackageNames(
 					toReportKind(fullReleaseReport, "simple") as ReleaseReport,
-					packageNamesToInclude,
+					packageNamesForReleaseGroup,
 				);
 
 	await Promise.all([
@@ -137,23 +145,6 @@ async function generateReleaseReport(
 	]);
 
 	log.log("Release report processed successfully.");
-}
-
-function getPackageNamesForReleaseGroup(
-	report: ReleaseReport,
-	releaseGroup: ReleaseGroup,
-): Set<string> {
-	const packageNames = new Set(
-		Object.entries(report)
-			.filter(([, details]) => details?.releaseGroup === releaseGroup)
-			.map(([packageName]) => packageName),
-	);
-
-	if (packageNames.size === 0) {
-		throw new Error(`No packages found for release group '${releaseGroup}' in the full report.`);
-	}
-
-	return packageNames;
 }
 
 function filterReportByPackageNames(report: ReleaseReport, packageNames: Set<string>): ReleaseReport {
@@ -209,15 +200,13 @@ async function updateReportVersions(
 	ignorePackageList: Set<string>,
 	version: string,
 	releaseGroup: ReleaseGroup | undefined,
+	packageNamesForReleaseGroup: Set<string> | undefined,
 	log: Logger,
 ): Promise<void> {
 	const useTestVersionForReleaseGroupPackages =
 		releaseGroup !== undefined &&
 		releaseGroupsWithTestVersionsInManifest.has(releaseGroup) &&
 		isInternalTestVersion(version);
-
-	const packageNamesForReleaseGroup =
-		releaseGroup === undefined ? undefined : getPackageNamesForReleaseGroup(report, releaseGroup);
 
 	const clientPackageName = "fluid-framework";
 
