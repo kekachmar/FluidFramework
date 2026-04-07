@@ -18,21 +18,12 @@ parameters:
 - name: buildDirectory
   type: string
 
-- name: buildToolsVersionToInstall
-  type: string
-  default: repo
-
 - name: serverManifestCategory
   type: string
   default: prerelease
   values:
   - prerelease
   - release
-
-# The path to the pnpm store.
-- name: pnpmStorePath
-  type: string
-  default: $(Pipeline.Workspace)/.pnpm-store
 
 stages:
 
