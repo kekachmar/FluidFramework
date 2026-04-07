@@ -330,7 +330,7 @@ export abstract class ReleaseReportBaseCommand<
 		let previousReleasedVersion: VersionDetails | undefined;
 		if (vIndex >= 0) {
 			previousReleasedVersion =
-				vIndex + 1 <= versionCount
+				vIndex + 1 < versionCount
 					? sortedByVersion[vIndex + 1]
 					: { version: DEFAULT_MIN_VERSION };
 		} else {
