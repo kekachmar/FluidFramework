@@ -361,7 +361,7 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 
     The command operates in two modes: "whole repo" or "release group." The default mode is "whole repo." In this mode, the command will look at the git tags in the repo to determine the versions, and will include all release groups and packages in the repo. You can control which version of each package and release group is included in the report using the --interactive, --mostRecent, and --highest flags.
 
-	    The "release group" mode can be activated by passing a --releaseGroup flag. In this mode, the specified release group's version will be loaded from the repo, and its immediate Fluid dependencies will be included in the report. This is useful when we want to include only the dependency versions that the release group depends on in the report.`;
+	The "release group" mode can be activated by passing a --releaseGroup flag. In this mode, the specified release group's version will be loaded from the repo, and its immediate Fluid dependencies will be included in the report. This is useful when we want to include only the dependency versions that the release group depends on in the report.`;
 
 	static readonly examples = [
 		{
@@ -468,8 +468,8 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		if (this.releaseData === undefined) {
 			this.error(`No releases found for ${flags.releaseGroup}`);
 		}
-		const shouldIncludeReleaseType = mode === "inRepo" && flags.useCurrentVersion;
-		const report = await this.generateReleaseReport(this.releaseData, shouldIncludeReleaseType);
+		const isPrereleaseReport = mode === "inRepo" && flags.useCurrentVersion;
+		const report = await this.generateReleaseReport(this.releaseData, isPrereleaseReport);
 
 		const tableData = this.generateReleaseTable(report, flags.releaseGroup);
 
