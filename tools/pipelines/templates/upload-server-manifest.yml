@@ -73,7 +73,7 @@ jobs:
           script: |
             set -eu -o pipefail
             mkdir upload_release_reports
-            flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)'
+            flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)' --releaseGroup ${{ parameters.releaseGroup }}
 
     - ${{ if ne(parameters.releaseReportCategory, '') }}:
       - task: Bash@3
