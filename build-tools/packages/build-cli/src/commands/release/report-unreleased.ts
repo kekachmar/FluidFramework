@@ -174,7 +174,9 @@ async function writeReport(
 
 	log.log(`Build Number: ${buildNumber}`);
 
-	const outDirByBuildNumber = path.join(outDir, `${revisedFileName}-${buildNumber}.json`);
+	const outDirByBuildNumber = isInternalTestVersion(version)
+		? path.join(outDir, `${revisedFileName}-${buildNumber}-test.json`)
+		: path.join(outDir, `${revisedFileName}-${buildNumber}.json`);
 
 	// Generate the build-number manifest unconditionally
 	const promises = [fs.writeFile(outDirByBuildNumber, JSON.stringify(report, undefined, 2))];
