@@ -334,11 +334,10 @@ export abstract class ReleaseReportBaseCommand<
 					? sortedByVersion[vIndex + 1]
 					: { version: DEFAULT_MIN_VERSION };
 		} else {
-			if (latestReleaseChooseMode === "inRepo" && useCurrentVersion) {
-				previousReleasedVersion = undefined;
-			} else {
-				previousReleasedVersion = { version: DEFAULT_MIN_VERSION };
-			}
+			previousReleasedVersion =
+				latestReleaseChooseMode === "inRepo" && useCurrentVersion
+					? undefined
+					: { version: DEFAULT_MIN_VERSION };
 		}
 
 		return {
@@ -380,7 +379,7 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 		},
 		{
 			description:
-				"Generate a release report for the historian release group at the in-repo version.",
+				"Generate a release report for the historian release group using the current package.json versions.",
 			command: "<%= config.bin %> <%= command.id %> -g historian --useCurrentVersion",
 		},
 	];

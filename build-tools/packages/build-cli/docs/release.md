@@ -210,8 +210,7 @@ Generates a report of Fluid Framework releases.
 ```
 USAGE
   $ flub release report [--json] [-v | --quiet] [-i | -r | -s] [-g
-    client|server|azure|build-tools|gitrest|historian] [-o <value>] [--baseFileName <value>]
-    [--useCurrentVersion]
+    client|server|azure|build-tools|gitrest|historian] [-o <value>] [--baseFileName <value>] [--useCurrentVersion]
 
 FLAGS
   -g, --releaseGroup=<option>
@@ -282,6 +281,10 @@ EXAMPLES
   Generate a release report for each package and release group in the repo interactively.
 
     $ flub release report -i
+
+  Generate a release report for the historian release group using the current package.json versions.
+
+    $ flub release report -g historian --useCurrentVersion
 ```
 
 _See code: [src/commands/release/report.ts](https://github.com/microsoft/FluidFramework/blob/main/build-tools/packages/build-cli/src/commands/release/report.ts)_
@@ -293,15 +296,17 @@ Creates a release report for an unreleased build (one that is not published to n
 ```
 USAGE
   $ flub release report-unreleased --version <value> --outDir <value> --fullReportFilePath <value> --branchName <value> [-v |
-    --quiet]
+    --quiet] [-g client|server|azure|build-tools|gitrest|historian]
 
 FLAGS
-  --branchName=<value>          (required) Branch name. For release branches, the manifest file is uplaoded by build
-                                number and not by current date.
-  --fullReportFilePath=<value>  (required) Path to a report file in the 'full' format.
-  --outDir=<value>              (required) Release report output directory
-  --version=<value>             (required) Version to generate a report for. Typically, this version is the version of a
-                                dev build.
+  -g, --releaseGroup=<option>       Filters the release report to only include packages from this release group.
+                                    <options: client|server|azure|build-tools|gitrest|historian>
+      --branchName=<value>          (required) Branch name. For release branches, the manifest file is uploaded by build
+                                    number and not by current date.
+      --fullReportFilePath=<value>  (required) Path to a report file in the 'full' format.
+      --outDir=<value>              (required) Release report output directory
+      --version=<value>             (required) Version to generate a report for. Typically, this version is the version
+                                    of a dev build.
 
 LOGGING FLAGS
   -v, --verbose  Enable verbose logging.

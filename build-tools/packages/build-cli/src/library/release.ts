@@ -39,7 +39,6 @@ export interface ReleaseDetails extends PrereleaseDetails {
 	isNewRelease: boolean;
 }
 
-
 /**
  * Version range strings. These strings are included in release reports so that partners can use the strings as-is in
  * package.json dependencies.
