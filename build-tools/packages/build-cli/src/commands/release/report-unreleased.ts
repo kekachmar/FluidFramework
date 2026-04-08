@@ -14,12 +14,6 @@ import { releaseGroupFlag, semverFlag } from "../../flags.js";
 import { BaseCommand, type ReleaseReport, toReportKind } from "../../library/index.js";
 import type { ReleaseGroup } from "../../releaseGroups.js";
 
-const releaseGroupsWithTestVersionsInManifest = new Set<ReleaseGroup>([
-	"server",
-	"historian",
-	"gitrest",
-]);
-
 export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReportCommand> {
 	static readonly summary =
 		`Creates a release report for an unreleased build (one that is not published to npm), using an existing report in the "full" format as input.`;
@@ -204,11 +198,6 @@ async function updateReportVersions(
 	releaseGroup: ReleaseGroup | undefined,
 	log: Logger,
 ): Promise<void> {
-	const useTestVersionForReleaseGroupPackages =
-		releaseGroup !== undefined &&
-		releaseGroupsWithTestVersionsInManifest.has(releaseGroup) &&
-		isInternalTestVersion(version);
-
 	const packageNames: Record<string, string> = {
 		"client": "fluid-framework",
 		"server": "@fluidframework/server-routerlicious",
@@ -244,12 +233,6 @@ async function updateReportVersions(
 		}
 
 		const packageInfo = report[packageName];
-
-		if (useTestVersionForReleaseGroupPackages) {
-			report[packageName].ranges.caret = version;
-			report[packageName].version = version;
-			continue;
-		}
 
 		// todo: add better checks
 		if (packageInfo.ranges.caret && packageInfo.ranges.caret === packageVersionCaret) {
