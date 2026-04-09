@@ -663,7 +663,7 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 						date: latestDate,
 						releaseGroup: pkg.monoRepo?.releaseGroup,
 						isNewRelease,
-						previousVersion: prevVer,
+						previousVersion: prevVer === DEFAULT_MIN_VERSION ? undefined : prevVer,
 						releaseType: bumpType,
 						ranges,
 					};
@@ -674,7 +674,7 @@ export default class ReleaseReportCommand extends ReleaseReportBaseCommand<
 					versionScheme: scheme,
 					date: latestDate,
 					isNewRelease,
-					previousVersion: prevVer,
+					previousVersion: prevVer === DEFAULT_MIN_VERSION ? undefined : prevVer,
 					releaseType: bumpType,
 					ranges,
 				};
