@@ -11,7 +11,8 @@ import { Flags } from "@oclif/core";
 import { formatISO } from "date-fns";
 
 import { releaseGroupFlag, semverFlag } from "../../flags.js";
-import { BaseCommand, type ReleaseReport, toReportKind } from "../../library/index.js";
+import { BaseCommand } from "../../library/commands/base.js";
+import { type ReleaseReport, toReportKind } from "../../library/release.js";
 import type { ReleaseGroup } from "../../releaseGroups.js";
 
 export class UnreleasedReportCommand extends BaseCommand<typeof UnreleasedReportCommand> {

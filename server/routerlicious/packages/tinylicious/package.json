@@ -65,7 +65,7 @@
 		"lodash": "^4.17.21",
 		"morgan": "^1.8.1",
 		"nconf": "^0.12.0",
-		"socket.io": "^4.8.0",
+		"socket.io": "^4.8.3",
 		"split": "^1.0.0",
 		"uuid": "^11.1.0",
 		"winston": "^3.6.0"
@@ -86,7 +86,8 @@
 		"@types/mocha": "^10.0.10",
 		"@types/morgan": "^1.7.35",
 		"@types/nconf": "^0.10.0",
-		"@types/node": "^18.19.39",
+		"@types/node": "^22",
+		"@types/rimraf": "^3.0.0",
 		"@types/split": "^0.3.28",
 		"copyfiles": "^2.4.1",
 		"cross-env": "^7.0.3",

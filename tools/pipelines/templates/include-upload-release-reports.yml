@@ -9,7 +9,7 @@ steps:
 - task: CopyFiles@2
   displayName: Copy release reports
   inputs:
-    SourceFolder: ${{ parameters.buildDirectory }}/upload_release_reports
+    SourceFolder: $(Pipeline.Workspace)/${{ parameters.buildDirectory }}/upload_release_reports
     TargetFolder: $(Build.ArtifactStagingDirectory)/release_reports
 
 - task: AzureCLI@2
@@ -18,7 +18,7 @@ steps:
   inputs:
     azureSubscription: 'fluid-docs'
     scriptType: bash
-    workingDirectory: ${{ parameters.buildDirectory }}
+    workingDirectory: $(Pipeline.Workspace)/${{ parameters.buildDirectory }}
     scriptLocation: inlineScript
     inlineScript: |
       blobPrefix=""

@@ -137,9 +137,6 @@ module.exports = {
 
 				// pinned since newer versions (2.3 through 2.6) refuse to work on NodeJS other than 10 || 12 || 14 due to https://github.com/cerner/terra-toolkit/issues/828
 				"@cerner/duplicate-package-checker-webpack-plugin",
-
-				// socket.io-client is forced to avoid 4.8 to avoid https://github.com/socketio/socket.io/issues/5202
-				"socket.io-client",
 			],
 			packages: ["**"],
 			range: "~",
@@ -154,12 +151,12 @@ module.exports = {
 			range: "",
 		},
 
-		// @fluid-example/import-testing typescript versions should use ~
+		// @fluid-example/typescript-versions-host typescript versions should use ~
 		{
-			label: "@fluid-example/import-testing typescript versions should use ~",
+			label: "@fluid-example/typescript-versions-host typescript versions should use ~",
 			dependencies: ["typescript-*"],
 			dependencyTypes: ["dev"],
-			packages: ["@fluid-example/import-testing"],
+			packages: ["@fluid-example/typescript-versions-host"],
 			range: "~",
 		},
 
@@ -195,11 +192,13 @@ module.exports = {
 			label:
 				"Version compatibility workarounds should be used, or removed from syncpack.config.cjs if no longer needed.",
 			dependencies: [
-				// TODO: Remove @biomejs/biome once all packages are updated to the latest version
-				"@biomejs/biome",
 				"react-virtualized-auto-sizer",
 				"@types/react",
 				"@types/react-dom",
+				// "quill-delta" 5 does not support CommonJS so @fluid-experimental/ot is stuck on version 4 for its dev-dep.
+				// Other use of quill delta is in our react package for text editing, which is ESM only and uses up to date quill packages.
+				// This results in us being stuck using 2 versions as long as @fluid-experimental/ot tests support CommonJS and use quill-delta.
+				"quill-delta",
 			],
 			packages: ["**"],
 			isIgnored: true,
