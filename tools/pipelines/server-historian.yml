@@ -42,7 +42,6 @@ trigger:
     - main
     - next
     - lts
-    - test/*
   paths:
     include:
     - .prettierignore

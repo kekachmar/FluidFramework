@@ -8,10 +8,6 @@ parameters:
 - name: releaseGroup
   type: string
 
-- name: releaseReportCategory
-  type: string
-  default: ''
-
 jobs:
   - job:
     displayName: Upload Release Reports
@@ -21,7 +17,11 @@ jobs:
       value: $[stageDependencies.build.build.outputs['SetVersion.version']]
     - name: isReleaseBuild
       value: $[eq(variables['release'], 'release')]
+    - name: releaseReportCategory
+      value: ${{ if eq(parameters.releaseGroup, 'server') }}routerlicious-${{ else }}${{ format('{0}-', parameters.releaseGroup) }}${{ endif }}
     steps:
+    - checkout: self
+      path: $(FluidFrameworkDirectory)
     - template: /tools/pipelines/templates/include-use-node-version.yml@self
     - template: /tools/pipelines/templates/include-install-build-tools.yml@self
       parameters:
@@ -31,7 +31,7 @@ jobs:
       displayName: Generate release reports
       inputs:
         targetType: 'inline'
-        workingDirectory: ${{ parameters.buildDirectory }}
+        workingDirectory: $(Pipeline.Workspace)/${{ parameters.buildDirectory }}
         script: |
           set -eu -o pipefail
           mkdir generate_release_reports
@@ -46,33 +46,32 @@ jobs:
       displayName: Update report version
       inputs:
         targetType: 'inline'
-        workingDirectory: ${{ parameters.buildDirectory }}
+        workingDirectory: $(Pipeline.Workspace)/${{ parameters.buildDirectory }}
         script: |
           set -eu -o pipefail
           mkdir upload_release_reports
           flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)' --releaseGroup ${{ parameters.releaseGroup }}
 
-    - ${{ if ne(parameters.releaseReportCategory, '') }}:
-      - task: Bash@3
-        displayName: Rename release report files
-        inputs:
-          targetType: 'inline'
-          workingDirectory: ${{ parameters.buildDirectory }}
-          script: |
-            set -eu -o pipefail
-            buildNumber="$(Build.BuildNumber)"
-            for file in upload_release_reports/*.json; do
-                if [ -f "$file" ]; then
-                baseName="$(basename "$file" .json)"
-                if [[ "$baseName" == *"-$buildNumber" ]] || [[ "$baseName" == *"-$buildNumber-test" ]]; then
-                  mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName.json"
-                elif [[ "$baseName" =~ -[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-                  mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName.json"
-                else
-                  mv "$file" "upload_release_reports/${{ parameters.releaseReportCategory }}$baseName-$buildNumber.json"
-                fi
-                fi
-            done
+    - task: Bash@3
+      displayName: Rename release report files
+      inputs:
+        targetType: 'inline'
+        workingDirectory: $(Pipeline.Workspace)/${{ parameters.buildDirectory }}
+        script: |
+          set -eu -o pipefail
+          buildNumber="$(Build.BuildNumber)"
+          for file in upload_release_reports/*.json; do
+              if [ -f "$file" ]; then
+              baseName="$(basename "$file" .json)"
+              if [[ "$baseName" == *"-$buildNumber" ]] || [[ "$baseName" == *"-$buildNumber-test" ]]; then
+                mv "$file" "upload_release_reports/$(releaseReportCategory)$baseName.json"
+              elif [[ "$baseName" =~ -[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+                mv "$file" "upload_release_reports/$(releaseReportCategory)$baseName.json"
+              else
+                mv "$file" "upload_release_reports/$(releaseReportCategory)$baseName-$buildNumber.json"
+              fi
+              fi
+          done
 
     - template: /tools/pipelines/templates/include-upload-release-reports.yml@self
       parameters:

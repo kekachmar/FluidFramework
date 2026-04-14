@@ -45,6 +45,10 @@ variables:
 
 - name: testBuild
   value: ${{ lower(startsWith(variables['Build.SourceBranch'], 'refs/heads/test/')) }}
+- name: isMainBranch
+  value: ${{ lower(eq(variables['Build.SourceBranch'], 'refs/heads/main')) }}
+- name: isReleaseBranch
+  value: ${{ lower(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')) }}
 - name: shouldPublish
   value: ${{
     and(
