@@ -17,8 +17,12 @@ jobs:
       value: $[stageDependencies.build.build.outputs['SetVersion.version']]
     - name: isReleaseBuild
       value: $[eq(variables['release'], 'release')]
-    - name: releaseReportCategory
-      value: ${{ if eq(parameters.releaseGroup, 'server') }}routerlicious-${{ else }}${{ format('{0}-', parameters.releaseGroup) }}${{ endif }}
+    - ${{ if eq(parameters.releaseGroup, 'server') }}:
+      - name: releaseReportCategory
+        value: routerlicious-
+    - ${{ else }}:
+      - name: releaseReportCategory
+        value: ${{ format('{0}-', parameters.releaseGroup) }}
     steps:
     - checkout: self
       path: $(FluidFrameworkDirectory)
