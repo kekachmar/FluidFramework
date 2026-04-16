@@ -50,7 +50,7 @@ jobs:
           mkdir upload_release_reports
           flub release report-unreleased --version $(version) --fullReportFilePath generate_release_reports/manifest.full.json --outDir upload_release_reports --branchName '$(Build.SourceBranch)' --releaseGroup ${{ parameters.releaseGroup }}
 
-    # Renames release reports to include the release group (server, historian, gitrest)
+    # Renames release reports to include the release group
     - task: Bash@3
       displayName: Rename release report files
       inputs:
